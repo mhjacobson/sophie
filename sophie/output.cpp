@@ -15,11 +15,11 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 
-Output::Output(const char *const filename, const AVCodecParameters *const video_codecpar, const AVCodecParameters *const audio_codecpar, const AVRational video_time_base, const AVRational audio_time_base) : _io_ctx(NULL), _epoch(0), _have_epoch(false) {
+Output::Output(const std::string filename, const AVCodecParameters *const video_codecpar, const AVCodecParameters *const audio_codecpar, const AVRational video_time_base, const AVRational audio_time_base) : _io_ctx(NULL), _epoch(0), _have_epoch(false) {
     const AVCodec *const video_codec = avcodec_find_encoder(video_codecpar->codec_id);
     const AVCodec *const audio_codec = avcodec_find_encoder(audio_codecpar->codec_id);
 
-    avformat_alloc_output_context2(&_output_ctx, NULL, "mp4", filename);
+    avformat_alloc_output_context2(&_output_ctx, NULL, "mp4", filename.c_str());
     assert(_output_ctx);
 
     _video_stream = avformat_new_stream(_output_ctx, video_codec);
@@ -77,7 +77,7 @@ Output::Output(const char *const filename, const AVCodecParameters *const video_
 
     avcodec_parameters_from_context(_audio_stream->codecpar, _audio_codec_ctx);
 
-    if (avio_open(&_io_ctx, filename, AVIO_FLAG_WRITE) < 0) {
+    if (avio_open(&_io_ctx, filename.c_str(), AVIO_FLAG_WRITE) < 0) {
         abort();
     }
 
@@ -87,10 +87,10 @@ Output::Output(const char *const filename, const AVCodecParameters *const video_
         abort();
     }
 
-    av_dump_format(_output_ctx, 0, filename, 1);
+    av_dump_format(_output_ctx, 0, filename.c_str(), 1);
 }
 
-void Output::encode_frame(AVFrame *const frame, bool is_audio) {
+void Output::encode_frame(AVFrame *const frame, const bool is_audio) {
     // Abort if called after finish().
     assert(_output_ctx != NULL);
 
@@ -123,7 +123,7 @@ void Output::encode_frame(AVFrame *const frame, bool is_audio) {
     flush(is_audio);
 }
 
-void Output::flush(bool is_audio) {
+void Output::flush(const bool is_audio) {
     // Abort if called after finish().
     assert(_output_ctx != NULL);
 

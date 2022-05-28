@@ -58,14 +58,14 @@ RingBuffer<AVFrame *, 1300> frame_buffer([](AVFrame *&frame) {
 RingBuffer<bool, 10> interesting_frames;
 
 #if defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__)
-void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, const unsigned int height, const unsigned int rowbytes, const char *const filename) {
+void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, const unsigned int height, const unsigned int rowbytes, const std::string filename) {
     const CFDataRef data = CFDataCreate(kCFAllocatorDefault, bytes, height * rowbytes);
     const CGDataProviderRef provider = CGDataProviderCreateWithCFData(data);
     const CGColorSpaceRef space = CGColorSpaceCreateDeviceGray();
 
     const CGImageRef img = CGImageCreate(width, height, 8, 8, rowbytes, space, kCGBitmapByteOrderDefault, provider, NULL, false, kCGRenderingIntentDefault);
 
-    CGImageWriteToFile(img, filename);
+    CGImageWriteToFile(img, filename.c_str());
 
     CGImageRelease(img);
     CGColorSpaceRelease(space);
@@ -73,13 +73,13 @@ void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, co
     CFRelease(data);
 }
 #else /* __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ */
-void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, const unsigned int height, const unsigned int rowbytes, const char *const filename) {
+void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, const unsigned int height, const unsigned int rowbytes, const std::string filename) {
     png_bytep *const row_pointers = (png_bytep *)malloc(height * sizeof (uint8_t *));
     for (int i = 0; i < height; i++) {
         row_pointers[i] = (png_bytep)(bytes + i * rowbytes);
     }
 
-    FILE *const fp = fopen(filename, "wb");
+    FILE *const fp = fopen(filename.c_str(), "wb");
     assert(fp);
 
     const png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -189,7 +189,7 @@ int main(int argc, const char *argv[]) {
     const std::string input_filename = argv[1];
     const std::string output_dir = argv[2];
 
-    Input input(input_filename.c_str());
+    Input input(input_filename);
     Output *output = NULL;
     int64_t last_motion_timestamp = 0;
     AVFrame *const previous_video_frame = av_frame_alloc();
@@ -246,7 +246,7 @@ int main(int argc, const char *argv[]) {
                         const std::string timestamp_string = std::string(timestamp);
 
                         const std::string frame_output_filename = output_dir + "/" + timestamp_string + ".png";
-                        dump_picture_gray8(difference_buffer, frame->width, frame->height, frame->width, frame_output_filename.c_str());
+                        dump_picture_gray8(difference_buffer, frame->width, frame->height, frame->width, frame_output_filename);
 
                         char path[] = "/tmp/sophie.mp4.XXXXXX";
                         const int fd = mkstemp(path);
@@ -260,7 +260,7 @@ int main(int argc, const char *argv[]) {
 
                         fprintf(stderr, "%d: starting recording%s to %s\n", video_frame_total_index, manual_trigger ? " (manual)" : "", temp_filename.c_str());
 
-                        output = input.create_output(temp_filename.c_str());
+                        output = input.create_output(temp_filename);
 
                         // Output our buffered frames first.
                         bool encoded_video = false;

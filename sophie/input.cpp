@@ -15,9 +15,9 @@ extern "C" {
 #include <assert.h>
 #include <stdlib.h>
 
-Input::Input(const char *filename) {
+Input::Input(const std::string filename) {
     _input_ctx = NULL;
-    if (avformat_open_input(&_input_ctx, filename, NULL, NULL) != 0) {
+    if (avformat_open_input(&_input_ctx, filename.c_str(), NULL, NULL) != 0) {
         av_log(NULL, AV_LOG_ERROR, "Couldn't open file\n");
         abort();
     }
@@ -65,7 +65,7 @@ Input::Input(const char *filename) {
     // TODO: investigate further
     avformat_seek_file(_input_ctx, _video_stream_index, 0, 0, 0, AVSEEK_FLAG_FRAME);
 
-    av_dump_format(_input_ctx, 0, filename, 0);
+    av_dump_format(_input_ctx, 0, filename.c_str(), 0);
 }
 
 // Caller must free returned frame.
@@ -137,7 +137,7 @@ AVRational Input::video_codec_time_base() {
     return _video_codec_ctx->time_base;
 }
 
-Output *Input::create_output(const char *filename) {
+Output *Input::create_output(const std::string filename) {
     return new Output(filename, _video_codecpar, _audio_codecpar, _video_codec_ctx->time_base, _audio_codec_ctx->time_base);
 }
 

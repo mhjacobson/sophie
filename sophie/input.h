@@ -12,15 +12,16 @@ extern "C" {
 
 #include "output.h"
 #include "util.h"
+#include <string>
 
 #ifndef INPUT_H
 #define INPUT_H
 
 struct Input : DeleteImplicit {
-    Input(const char *filename);
+    Input(std::string filename);
     AVFrame *get_next_frame(bool *is_audio_out);
     AVRational video_codec_time_base();
-    Output *create_output(const char *filename);
+    Output *create_output(std::string filename);
     ~Input();
 private:
     AVFormatContext *_input_ctx;

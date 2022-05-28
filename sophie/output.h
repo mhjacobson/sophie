@@ -17,7 +17,7 @@ extern "C" {
 #define OUTPUT_H
 
 struct Output : DeleteImplicit {
-    Output(const char *const filename, const AVCodecParameters *const video_codecpar, const AVCodecParameters *const audio_codecpar, const AVRational video_time_base, const AVRational audio_time_base);
+    Output(std::string filename, const AVCodecParameters *video_codecpar, const AVCodecParameters *audio_codecpar, AVRational video_time_base, AVRational audio_time_base);
     void encode_frame(AVFrame *frame, bool is_audio);
     void flush(bool is_audio);
     void finish();
