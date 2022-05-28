@@ -46,10 +46,10 @@ extern "C" {
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define PIXEL_DIFFERENCE_THRESHOLD 30
+#define PIXEL_DIFFERENCE_THRESHOLD 40
+#define DIFFERENT_PIXELS_COUNT_THRESHOLD 30
 #define AFTER_MOTION_RECORD_SECONDS 10
 #define DIFFERENCE_START_Y 25 // to exclude the clock
-#define DIFFERENCE_THRESHOLD_YUV 40
 
 // TODO: size this more scientifically somehow?  Could maybe have an AVFrame-specific ring buffer that keeps constant time or memory (or min time, max memory).
 RingBuffer<AVFrame *, 1300> frame_buffer([](AVFrame *&frame) {
@@ -214,23 +214,23 @@ int main(int argc, const char *argv[]) {
                     difference_buffer = (uint8_t *)malloc(frame->width * frame->height * sizeof (uint8_t));
                 }
 
-                // Filter 1: pixels are only counted as different if they change by DIFFERENCE_THRESHOLD_YUV, to discard sensor noise.
+                // Filter 1: pixels are only counted as different if they change by PIXEL_DIFFERENCE_THRESHOLD, to discard sensor noise.
                 const Histogram<10> histogram = frame_difference_yuv(previous_video_frame, frame, difference_buffer);
                 const uint32_t pixels_different = histogram.count_where([](const uint8_t value) {
-                    return value >= DIFFERENCE_THRESHOLD_YUV;
+                    return value >= PIXEL_DIFFERENCE_THRESHOLD;
                 });
 
-                if (pixels_different > 0) {
-                    fprintf(stderr, "%d: %d%s\n", video_frame_total_index, pixels_different, pixels_different > PIXEL_DIFFERENCE_THRESHOLD ? " ***" : "");
-                    fprintf(stderr, "%s\n", histogram.description().c_str());
-                }
-
-                // Filter 2: frames are only counted as interesting if PIXEL_DIFFERENCE_THRESHOLD pixels are different, to discard small differences like leaves in the wind and birds.
-                const bool frame_interesting = pixels_different >= PIXEL_DIFFERENCE_THRESHOLD;
+                // Filter 2: frames are only counted as interesting if DIFFERENT_PIXELS_COUNT_THRESHOLD pixels are different, to discard small differences like leaves in the wind and birds.
+                const bool frame_interesting = pixels_different >= DIFFERENT_PIXELS_COUNT_THRESHOLD;
 
                 // As a debugging technique, brand interesting frames with a red box in the upper-right corner.
                 if (frame_interesting) {
                     brand_frame(frame);
+                }
+
+                if (pixels_different > 0) {
+                    fprintf(stderr, "%d: %d%s\n", video_frame_total_index, pixels_different, frame_interesting ? " ***" : "");
+                    fprintf(stderr, "%s\n", histogram.description().c_str());
                 }
 
                 // Filter 3: output is only generated if 3 out of the last 10 frames are different, to discard transient dazzle.
