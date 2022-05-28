@@ -11,11 +11,12 @@ extern "C" {
 }
 
 #include "output.h"
+#include "util.h"
 
 #ifndef INPUT_H
 #define INPUT_H
 
-struct Input {
+struct Input : DeleteImplicit {
     Input(const char *filename);
     AVFrame *get_next_frame(bool *is_audio_out);
     AVRational video_codec_time_base();

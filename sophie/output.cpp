@@ -182,3 +182,8 @@ void Output::finish() {
     avio_close(_io_ctx);
     _io_ctx = NULL;
 }
+
+Output::~Output() {
+    // Abort if finish() was never called.
+    assert(_output_ctx == NULL);
+}

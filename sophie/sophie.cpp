@@ -13,7 +13,6 @@
 // TODO:
 // [h264 @ 0x7f865502da00] mmco: unref short failure
 // [h264_videotoolbox @ 0x7f8e6d992c00] Color range not set for yuv420p. Using MPEG range.
-// tweak thresholds
 // ffmpeg on server drops audio frames (which crashes us if we're recording at the time)
 // figure out what to do with H.264 decoder workaround
 

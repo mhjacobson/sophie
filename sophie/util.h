@@ -156,7 +156,7 @@ private:
     uint32_t _buckets[256];
 };
 
-void move_file(const std::string source, const std::string destination) {
+[[maybe_unused]] static void move_file(const std::string source, const std::string destination) {
     const int rv = rename(source.c_str(), destination.c_str());
 
     if (rv != 0) {
