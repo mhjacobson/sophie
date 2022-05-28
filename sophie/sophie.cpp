@@ -223,21 +223,21 @@ int main(int argc, const char *argv[]) {
                 // Filter 2: frames are only counted as interesting if DIFFERENT_PIXELS_COUNT_THRESHOLD pixels are different, to discard small differences like leaves in the wind and birds.
                 const bool frame_interesting = pixels_different >= DIFFERENT_PIXELS_COUNT_THRESHOLD;
 
-                // As a debugging technique, brand interesting frames with a red box in the upper-right corner.
-                if (frame_interesting) {
-                    brand_frame(frame);
-                }
-
-                if (pixels_different > 0) {
-                    fprintf(stderr, "%d: %d%s\n", video_frame_total_index, pixels_different, frame_interesting ? " ***" : "");
-                    fprintf(stderr, "%s\n", histogram.description().c_str());
-                }
-
                 // Filter 3: output is only generated if 3 out of the last 10 frames are different, to discard transient dazzle.
                 interesting_frames.append(frame_interesting);
                 const size_t interesting_count = interesting_frames.count_where([](const bool &value) {
                     return value == true;
                 });
+
+                if (pixels_different > 0 || interesting_count > 0) {
+                    fprintf(stderr, "%d: %d%s\n", video_frame_total_index, pixels_different, frame_interesting ? " ***" : "");
+                    fprintf(stderr, "%s\n", histogram.description().c_str());
+                }
+
+                // As a debugging technique, brand interesting frames with a red box in the upper-right corner.  The branding doesn't affect the Y channel.
+                if (frame_interesting) {
+                    brand_frame(frame);
+                }
 
                 if (interesting_count >= 3 || manual_trigger) {
                     if (output == NULL) {
