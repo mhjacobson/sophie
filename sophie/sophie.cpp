@@ -43,6 +43,8 @@ extern "C" {
 #include <stdlib.h>
 #include <time.h>
 #include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #define PIXEL_DIFFERENCE_THRESHOLD 30
 #define AFTER_MOTION_RECORD_SECONDS 10
@@ -250,6 +252,8 @@ int main(int argc, const char *argv[]) {
                         char path[] = "/tmp/sophie.mp4.XXXXXX";
                         const int fd = mkstemp(path);
                         assert(fd != -1);
+                        int rv = fchmod(fd, 0644);
+                        assert(rv == 0);
                         temp_filename = std::string(path);
 
                         // TODO: per-date subdirectory?
