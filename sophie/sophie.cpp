@@ -105,17 +105,19 @@ void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, co
 #endif /* __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ */
 
 // TODO: vector-optimize
-Histogram<10> frame_difference_yuv(AVFrame *const picture1, AVFrame *const picture2, uint8_t *const difference_buffer) {
-    assert(picture1->width == picture2->width);
-    assert(picture1->height == picture2->height);
-    const int width = picture1->width;
-    const int height = picture1->height;
+Histogram<10> frame_difference_yuv(AVFrame *const frame1, AVFrame *const frame2, uint8_t *const difference_buffer) {
+    assert(frame1->format == AV_PIX_FMT_YUV420P);
+    assert(frame2->format == AV_PIX_FMT_YUV420P);
+    assert(frame1->width  == frame2->width);
+    assert(frame1->height == frame2->height);
+    const int width = frame1->width;
+    const int height = frame1->height;
 
     Histogram<10> histogram;
 
     for (int y = DIFFERENCE_START_Y; y < height; y++) {
-        const uint8_t *const row1 = picture1->data[0] + y * picture1->linesize[0];
-        const uint8_t *const row2 = picture2->data[0] + y * picture2->linesize[0];
+        const uint8_t *const row1 = frame1->data[0] + y * frame1->linesize[0];
+        const uint8_t *const row2 = frame2->data[0] + y * frame2->linesize[0];
         uint8_t *const diffrow = difference_buffer ? (difference_buffer + y * width) : NULL;
 
         for (int x = 0; x < width; x++) {
@@ -133,6 +135,36 @@ Histogram<10> frame_difference_yuv(AVFrame *const picture1, AVFrame *const pictu
     }
 
     return histogram;
+}
+
+void brand_frame(AVFrame *const frame) {
+    const int padding = 10;
+    const int box_side = 25;
+
+    const int width = frame->width;
+    const int height = frame->height;
+
+    assert(width > 2 * padding + box_side);
+    assert(height > 2 * padding + box_side);
+    assert(frame->format == AV_PIX_FMT_YUV420P);
+
+    const int linesize_u = frame->linesize[1];
+    const int linesize_v = frame->linesize[2];
+
+    for (int y = 10; y < 35; y++) {
+        const int row_index = y / 2;
+        uint8_t *const urow = (uint8_t *)(frame->data[1] + row_index * linesize_u);
+        uint8_t *const vrow = (uint8_t *)(frame->data[2] + row_index * linesize_v);
+
+        for (int x = width - 35; x < width - 10; x++) {
+            const int sample_index = x / 2;
+            uint8_t *const u = urow + sample_index;
+            uint8_t *const v = vrow + sample_index;
+
+            *u = 0;
+            *v = 255;
+        }
+    }
 }
 
 bool manual_trigger = false;
@@ -191,11 +223,16 @@ int main(int argc, const char *argv[]) {
                     fprintf(stderr, "%s\n", histogram.description().c_str());
                 }
 
-                // Filter 2: frames are only counted as different if PIXEL_DIFFERENCE_THRESHOLD pixels are different, to discard small differences like leaves in the wind and birds.
-                const bool frame_different = pixels_different >= PIXEL_DIFFERENCE_THRESHOLD;
+                // Filter 2: frames are only counted as interesting if PIXEL_DIFFERENCE_THRESHOLD pixels are different, to discard small differences like leaves in the wind and birds.
+                const bool frame_interesting = pixels_different >= PIXEL_DIFFERENCE_THRESHOLD;
+
+                // As a debugging technique, brand interesting frames with a red box in the upper-right corner.
+                if (frame_interesting) {
+                    brand_frame(frame);
+                }
 
                 // Filter 3: output is only generated if 3 out of the last 10 frames are different, to discard transient dazzle.
-                interesting_frames.append(frame_different);
+                interesting_frames.append(frame_interesting);
                 const size_t interesting_count = interesting_frames.count_where([](const bool &value) {
                     return value == true;
                 });
