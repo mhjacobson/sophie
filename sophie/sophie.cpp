@@ -309,8 +309,12 @@ int main(int argc, const char *argv[]) {
 
     // If the input ends while output is active, end output before exiting.
     if (output != NULL) {
-        fprintf(stderr, "END: ending recording\n");
+        fprintf(stderr, "END: ending recording; moving to %s\n", destination_filename.c_str());
         output->finish();
+
+        move_file(temp_filename, destination_filename);
+        temp_filename.clear();
+        destination_filename.clear();
 
         delete output;
         output = NULL;
