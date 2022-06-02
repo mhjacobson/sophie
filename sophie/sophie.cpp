@@ -242,13 +242,18 @@ int main(int argc, const char *argv[]) {
 
                 if (interesting_count >= 3 || manual_trigger) {
                     if (output == NULL) {
-                        char timestamp[1024];
+                        char string_buffer[1024];
                         const time_t t = time(NULL);
-                        strftime(timestamp, sizeof (timestamp), "%Y-%m-%dT%H:%M:%S%z", localtime(&t));
-                        const std::string timestamp_string = std::string(timestamp);
+                        const struct tm *const lt = localtime(&t);
+                        strftime(string_buffer, sizeof (string_buffer), "%Y-%m-%d", lt);
+                        const std::string datestamp_string = std::string(string_buffer);
+                        strftime(string_buffer, sizeof (string_buffer), "%Y-%m-%dT%H:%M:%S%z", lt);
+                        const std::string timestamp_string = std::string(string_buffer);
 
-                        const std::string frame_output_filename = output_dir + "/" + timestamp_string + ".png";
-                        dump_picture_gray8(difference_buffer, frame->width, frame->height, frame->width, frame_output_filename);
+                        const std::string date_output_dir = output_dir + "/" + datestamp_string;
+                        std::filesystem::create_directory(date_output_dir);
+
+                        dump_picture_gray8(difference_buffer, frame->width, frame->height, frame->width, date_output_dir + "/" + timestamp_string + "-difference.png");
 
                         char path[] = "/tmp/sophie.mp4.XXXXXX";
                         const int fd = mkstemp(path);
@@ -257,8 +262,7 @@ int main(int argc, const char *argv[]) {
                         assert(rv == 0);
                         temp_filename = std::string(path);
 
-                        // TODO: per-date subdirectory?
-                        destination_filename = std::string(output_dir) + "/" + timestamp_string + ".mp4";
+                        destination_filename = date_output_dir + "/" + timestamp_string + ".mp4";
 
                         fprintf(stderr, "%d: starting recording%s to %s\n", video_frame_total_index, manual_trigger ? " (manual)" : "", temp_filename.c_str());
 
