@@ -110,7 +110,7 @@ void Output::encode_frame(AVFrame *const frame, const bool is_audio) {
     frame->pts = translated_pts_in_codec;
 
 #if VERBOSE
-    fprintf(stderr, "> encode %s: %lld (orig: %lld)\n", is_audio ? "audio" : "video", frame->pts, original_pts);
+    fprintf(stderr, "> encode %s: %" PRId64 " (orig: %" PRId64 ")\n", is_audio ? "audio" : "video", frame->pts, original_pts);
 #endif /* VERBOSE */
 
     if (avcodec_send_frame(codec_ctx, frame) < 0) {
@@ -142,7 +142,7 @@ void Output::flush(const bool is_audio) {
 
         av_packet_rescale_ts(packet, codec_ctx->time_base, stream->time_base);
 #if VERBOSE
-        fprintf(stderr, "> write %s: dts %lld\n", is_audio ? "audio" : "video", packet->dts);
+        fprintf(stderr, "> write %s: dts %" PRId64 "\n", is_audio ? "audio" : "video", packet->dts);
 #endif /* VERBOSE */
 
         packet->stream_index = stream->index;
