@@ -1,6 +1,6 @@
 CC=clang
 OTHER_CFLAGS=
-LIBS=-lavformat -lavcodec -lavutil -lc++ -lpng
+LIBS=-lavformat -lavcodec -lavutil -lswscale -lc++ -lpng
 
 .PHONY: clean
 

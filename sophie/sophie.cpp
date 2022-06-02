@@ -72,6 +72,22 @@ void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, co
     CGDataProviderRelease(provider);
     CFRelease(data);
 }
+
+void dump_picture_bgra(const uint8_t *const bytes, const unsigned int width, const unsigned int height, const unsigned int rowbytes, const std::string filename){
+    const CFDataRef data = CFDataCreate(kCFAllocatorDefault, bytes, height * rowbytes);
+    const CGDataProviderRef provider = CGDataProviderCreateWithCFData(data);
+    // TODO: improperly assuming colorspace
+    const CGColorSpaceRef space = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+
+    const CGImageRef img = CGImageCreate(width, height, 8, 32, rowbytes, space, kCGBitmapByteOrder32Little | (int)kCGImageAlphaNoneSkipFirst, provider, NULL, false, kCGRenderingIntentDefault);
+
+    CGImageWriteToFile(img, filename.c_str());
+
+    CGImageRelease(img);
+    CGColorSpaceRelease(space);
+    CGDataProviderRelease(provider);
+    CFRelease(data);
+}
 #else /* __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ */
 void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, const unsigned int height, const unsigned int rowbytes, const std::string filename) {
     png_bytep *const row_pointers = (png_bytep *)malloc(height * sizeof (uint8_t *));
@@ -82,10 +98,10 @@ void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, co
     FILE *const fp = fopen(filename.c_str(), "wb");
     assert(fp);
 
-    const png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     assert(png_ptr);
 
-    const png_infop info_ptr = png_create_info_struct(png_ptr);
+    png_infop info_ptr = png_create_info_struct(png_ptr);
     assert(png_ptr);
 
     if (setjmp(png_jmpbuf(png_ptr))) {
@@ -95,15 +111,65 @@ void dump_picture_gray8(const uint8_t *const bytes, const unsigned int width, co
     png_init_io(png_ptr, fp);
     png_set_IHDR(png_ptr, info_ptr, width, height,
                  8, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
     png_write_info(png_ptr, info_ptr);
     png_write_image(png_ptr, row_pointers);
     png_write_end(png_ptr, NULL);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+
+    free(row_pointers);
+    fclose(fp);
+}
+
+void dump_picture_bgra(const uint8_t *const bytes, const unsigned int width, const unsigned int height, const unsigned int rowbytes, const std::string filename){
+    png_bytep *const row_pointers = (png_bytep *)malloc(height * sizeof (uint8_t *));
+    for (int i = 0; i < height; i++) {
+        row_pointers[i] = (png_bytep)(bytes + i * rowbytes);
+    }
+
+    FILE *const fp = fopen(filename.c_str(), "wb");
+    assert(fp);
+
+    png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    assert(png_ptr);
+
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+    assert(png_ptr);
+
+    if (setjmp(png_jmpbuf(png_ptr))) {
+        abort();
+    }
+
+    png_init_io(png_ptr, fp);
+    png_set_IHDR(png_ptr, info_ptr, width, height,
+                 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
+                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_set_bgr(png_ptr);
+    png_write_info(png_ptr, info_ptr);
+    png_write_image(png_ptr, row_pointers);
+    png_write_end(png_ptr, NULL);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
 
     free(row_pointers);
     fclose(fp);
 }
 #endif /* __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ */
+
+void dump_frame(AVFrame *const frame, const std::string filename) {
+    const int width = frame->width;
+    const int height = frame->height;
+    const int bgra_rowbytes = width * 4 * sizeof (uint8_t);
+    uint8_t *const bgra_buffer = (uint8_t *)malloc(height * bgra_rowbytes);
+
+    struct SwsContext *convert_ctx = sws_getContext(width, height, (enum AVPixelFormat)frame->format, width, height, AV_PIX_FMT_BGRA, 0, NULL, NULL, NULL);
+    // TODO: assuming ITU-R BT.709 encoding, AVCOL_RANGE_MPEG (0)
+    sws_setColorspaceDetails(convert_ctx, sws_getCoefficients(SWS_CS_ITU709), 0, sws_getCoefficients(SWS_CS_DEFAULT), 0, 0, 1 << 16, 1 << 16);
+    sws_scale(convert_ctx, frame->data, frame->linesize, 0, height, &bgra_buffer, &bgra_rowbytes);
+    sws_freeContext(convert_ctx);
+
+    dump_picture_bgra(bgra_buffer, width, height, bgra_rowbytes, filename);
+    free(bgra_buffer);
+}
 
 // TODO: vector-optimize
 Histogram<10> frame_difference_yuv(AVFrame *const frame1, AVFrame *const frame2, uint8_t *const difference_buffer) {
@@ -253,7 +319,10 @@ int main(int argc, const char *argv[]) {
                         const std::string date_output_dir = output_dir + "/" + datestamp_string;
                         std::filesystem::create_directory(date_output_dir);
 
+#if 0
                         dump_picture_gray8(difference_buffer, frame->width, frame->height, frame->width, date_output_dir + "/" + timestamp_string + "-difference.png");
+#endif /* 0 */
+                        dump_frame(frame, date_output_dir + "/" + timestamp_string + ".png");
 
                         char path[] = "/tmp/sophie.mp4.XXXXXX";
                         const int fd = mkstemp(path);
