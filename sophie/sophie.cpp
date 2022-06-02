@@ -183,7 +183,7 @@ int main(int argc, const char *argv[]) {
         exit(1);
     }
 
-    av_log_set_level(AV_LOG_WARNING);// TODO: this also blocks the dump input/output.  Can I get that back?
+    av_log_set_level(AV_LOG_WARNING); // TODO: this also blocks the dump input/output.  Can I get that back?
     signal(SIGUSR1, handle_usr1);
 
     const std::string input_filename = argv[1];
@@ -210,7 +210,9 @@ int main(int argc, const char *argv[]) {
         if (!is_audio) {
             if (previous_video_frame->data[0] != NULL) {
                 if (difference_buffer == NULL) {
-                    difference_buffer = (uint8_t *)malloc(frame->width * frame->height * sizeof (uint8_t));
+                    const size_t size = frame->width * frame->height * sizeof (uint8_t);
+                    difference_buffer = (uint8_t *)malloc(size);
+                    memset(difference_buffer, 0, size);
                 }
 
                 // Filter 1: pixels are only counted as different if they change by PIXEL_DIFFERENCE_THRESHOLD, to discard sensor noise.
