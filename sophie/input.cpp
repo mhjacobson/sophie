@@ -27,8 +27,8 @@ Input::Input(const std::string filename) {
         abort();
     }
 
-    AVCodec *video_codec;
-    AVCodec *audio_codec;
+    const AVCodec *video_codec;
+    const AVCodec *audio_codec;
     _video_stream_index = av_find_best_stream(_input_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, &video_codec, 0);
     _audio_stream_index = av_find_best_stream(_input_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, &audio_codec, 0);
     assert(_video_stream_index >= 0);
