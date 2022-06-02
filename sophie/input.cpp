@@ -123,7 +123,7 @@ AVFrame *Input::get_next_frame(bool *const is_audio_out) {
         if (is_audio_out) *is_audio_out = is_audio;
 
 #if VERBOSE
-        fprintf(stderr, "< decode %s: %lld (%lld %lld)\n", is_audio ? "audio" : "video", frame->pts, frame->pkt_pts, frame->pkt_dts);
+        fprintf(stderr, "< decode %s: %lld (%lld)\n", is_audio ? "audio" : "video", frame->pts, frame->pkt_dts);
 #endif /* VERBOSE */
     } else {
         av_frame_free(&frame);
