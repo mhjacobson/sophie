@@ -266,6 +266,12 @@ int main(int argc, const char *argv[]) {
         bool is_audio;
         AVFrame *const frame = input.get_next_frame(&is_audio);
 
+        static bool got_first_frame;
+        if (!got_first_frame) {
+            fprintf(stderr, "sophie on guard dog duty!\n");
+            got_first_frame = true;
+        }
+
         if (frame == NULL) {
             fprintf(stderr, "no frame\n");
             break;
