@@ -273,6 +273,10 @@ int main(int argc, const char *argv[]) {
 
         // Detect motion.
         if (!is_audio) {
+            // Delete some stuff from the frame to avoid affecting output encoding.  Seems like this state shouldn't really be on AVFrame itself.
+            frame->key_frame = 0;
+            frame->pict_type = AV_PICTURE_TYPE_NONE;
+
             if (previous_video_frame->data[0] != NULL) {
                 if (difference_buffer == NULL) {
                     const size_t size = frame->width * frame->height * sizeof (uint8_t);
