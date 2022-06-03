@@ -55,9 +55,15 @@ Output::Output(const std::string filename, const AVCodecParameters *const video_
         _video_codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
-    if (avcodec_open2(_video_codec_ctx, video_codec, NULL) < 0) {
+    AVDictionary *codec_options = NULL;
+    av_dict_set(&codec_options, "preset", "superfast", 0);
+
+    if (avcodec_open2(_video_codec_ctx, video_codec, &codec_options) < 0) {
         abort();
     }
+
+    av_dict_free(&codec_options);
+    assert(codec_options == NULL);
 
     avcodec_parameters_from_context(_video_stream->codecpar, _video_codec_ctx);
 
