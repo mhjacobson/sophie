@@ -40,9 +40,12 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <optional>
 #include <string>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #define PIXEL_DIFFERENCE_THRESHOLD 40
 #define DIFFERENT_PIXELS_COUNT_THRESHOLD 30
@@ -233,6 +236,30 @@ void brand_frame(AVFrame *const frame) {
     }
 }
 
+void spawn_notifier(const std::string program, const std::string image_filename) {
+    const pid_t pid = fork();
+
+    if (pid) {
+        assert(pid != -1);
+    } else {
+#ifdef __FreeBSD__
+        closefrom(3);
+#else /* __FreeBSD__ */
+        for (int i = 3; i < OPEN_MAX; i++) {
+            close(i);
+        }
+#endif /* __FreeBSD__ */
+
+        execl(program.c_str(), program.c_str(), image_filename.c_str(), NULL);
+        _exit(1);
+    }
+}
+
+void handle_chld(int signal) {
+    int status;
+    wait(&status);
+}
+
 bool manual_trigger = false;
 void handle_usr1(int signal) {
     manual_trigger = true;
@@ -243,16 +270,18 @@ int64_t div_i64_rat(int64_t a, AVRational b) {
 }
 
 int main(int argc, const char *argv[]) {
-    if (argc != 3) {
-        fprintf(stderr, "usage:\n\tsophie <input specifier> <output directory>\n");
+    if (argc < 3 || argc > 4) {
+        fprintf(stderr, "usage:\n\tsophie <input specifier> <output directory> [<notifier program>]\n");
         exit(1);
     }
 
     av_log_set_level(AV_LOG_WARNING); // TODO: this also blocks the dump input/output.  Can I get that back?
     signal(SIGUSR1, handle_usr1);
+    signal(SIGCHLD, handle_chld);
 
     const std::string input_filename = argv[1];
     const std::string output_dir = argv[2];
+    const std::optional<std::string> notifier_program = (argc > 3) ? std::string(argv[3]) : std::optional<std::string>();
 
     Input input(input_filename);
     Output *output = NULL;
@@ -331,7 +360,12 @@ int main(int argc, const char *argv[]) {
 #if 0
                         dump_picture_gray8(difference_buffer, frame->width, frame->height, frame->width, date_output_dir + "/" + timestamp_string + "-difference.png");
 #endif /* 0 */
-                        dump_frame(frame, date_output_dir + "/" + timestamp_string + ".png");
+                        const std::string image_filename = date_output_dir + "/" + timestamp_string + ".png";
+                        dump_frame(frame, image_filename);
+
+                        if (notifier_program) {
+                            spawn_notifier(*notifier_program, image_filename);
+                        }
 
                         char path[] = "/tmp/sophie.mp4.XXXXXX";
                         const int fd = mkstemp(path);
