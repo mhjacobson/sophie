@@ -185,7 +185,7 @@ Histogram<10> frame_difference_yuv(AVFrame *const frame1, AVFrame *const frame2,
 
     // Exclude the clock, our neighbors, and the birds from interest.
 #define STRIKE_ZONE_MIN_X 0
-#define STRIKE_ZONE_MAX_X 360
+#define STRIKE_ZONE_MAX_X 460
 #define STRIKE_ZONE_MIN_Y 25
 #define STRIKE_ZONE_MAX_Y 480
 
