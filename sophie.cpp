@@ -50,7 +50,6 @@ extern "C" {
 #define PIXEL_DIFFERENCE_THRESHOLD 40
 #define DIFFERENT_PIXELS_COUNT_THRESHOLD 30
 #define AFTER_MOTION_RECORD_SECONDS 10
-#define DIFFERENCE_START_Y 25 // to exclude the clock
 
 // TODO: size this more scientifically somehow?  Could maybe have an AVFrame-specific ring buffer that keeps constant time or memory (or min time, max memory).
 RingBuffer<AVFrame *, 1300> frame_buffer([](AVFrame *&frame) {
@@ -184,12 +183,18 @@ Histogram<10> frame_difference_yuv(AVFrame *const frame1, AVFrame *const frame2,
 
     Histogram<10> histogram;
 
-    for (int y = DIFFERENCE_START_Y; y < height; y++) {
+    // Exclude the clock, our neighbors, and the birds from interest.
+#define STRIKE_ZONE_MIN_X 0
+#define STRIKE_ZONE_MAX_X 360
+#define STRIKE_ZONE_MIN_Y 25
+#define STRIKE_ZONE_MAX_Y 480
+
+    for (int y = STRIKE_ZONE_MIN_Y; y < STRIKE_ZONE_MAX_Y; y++) {
         const uint8_t *const row1 = frame1->data[0] + y * frame1->linesize[0];
         const uint8_t *const row2 = frame2->data[0] + y * frame2->linesize[0];
         uint8_t *const diffrow = difference_buffer ? (difference_buffer + y * width) : NULL;
 
-        for (int x = 0; x < width; x++) {
+        for (int x = STRIKE_ZONE_MIN_X; x < STRIKE_ZONE_MAX_X; x++) {
             const uint8_t *const pixel1 = row1 + x;
             const uint8_t *const pixel2 = row2 + x;
             uint8_t *const diffpixel = diffrow ? (diffrow + x) : NULL;
