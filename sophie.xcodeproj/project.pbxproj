@@ -78,7 +78,12 @@
 		C90402BC283A936A0017EF26 = {
 			isa = PBXGroup;
 			children = (
-				C90402C7283A936A0017EF26 /* sophie */,
+				C90402C8283A936A0017EF26 /* sophie.cpp */,
+				C9006834283F35030075EFAB /* input.cpp */,
+				C9006835283F35030075EFAB /* input.h */,
+				C90402F7283B41080017EF26 /* output.cpp */,
+				C90402F8283B41080017EF26 /* output.h */,
+				C900683B28401F010075EFAB /* util.h */,
 				C90402D5283A97710017EF26 /* Frameworks */,
 				C90402C6283A936A0017EF26 /* Products */,
 			);
@@ -90,19 +95,6 @@
 				C90402C5283A936A0017EF26 /* sophie */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		C90402C7283A936A0017EF26 /* sophie */ = {
-			isa = PBXGroup;
-			children = (
-				C90402C8283A936A0017EF26 /* sophie.cpp */,
-				C9006834283F35030075EFAB /* input.cpp */,
-				C9006835283F35030075EFAB /* input.h */,
-				C90402F7283B41080017EF26 /* output.cpp */,
-				C90402F8283B41080017EF26 /* output.h */,
-				C900683B28401F010075EFAB /* util.h */,
-			);
-			path = sophie;
 			sourceTree = "<group>";
 		};
 		C90402D5283A97710017EF26 /* Frameworks */ = {
