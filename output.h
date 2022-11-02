@@ -16,7 +16,7 @@ extern "C" {
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-struct Output : DeleteImplicit {
+struct Output : private DeleteImplicit {
     Output(std::string filename, const AVCodecParameters *video_codecpar, const AVCodecParameters *audio_codecpar, AVRational video_time_base, AVRational audio_time_base);
     void encode_frame(AVFrame *frame, bool is_audio);
     void flush(bool is_audio);

@@ -25,10 +25,10 @@ struct DeleteImplicit {
 };
 
 template <typename T, size_t size>
-struct RingBuffer : DeleteImplicit {
+struct RingBuffer : private DeleteImplicit {
     RingBuffer(std::function<void(T&)> drop = [](T&){}) : _tail(0), _head(0), _drop(drop), _empty(true) { }
 
-    void append(const T value) {
+    void append(const T &value) {
         if (!_empty && _tail == _head) {
             _drop(_values[_tail]);
             _tail = (_tail == size - 1) ? 0 : (_tail + 1);
@@ -117,7 +117,7 @@ private:
 };
 
 template <unsigned int bucket_size>
-struct Histogram : DeleteImplicit {
+struct Histogram : private DeleteImplicit {
     Histogram() : _buckets{0} {}
     Histogram(const Histogram &other) {
         for (int i = 0; i < 256; i++) {

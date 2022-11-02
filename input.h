@@ -17,7 +17,7 @@ extern "C" {
 #ifndef INPUT_H
 #define INPUT_H
 
-struct Input : DeleteImplicit {
+struct Input : private DeleteImplicit {
     Input(std::string filename);
     AVFrame *get_next_frame(bool *is_audio_out);
     AVRational video_codec_time_base();
