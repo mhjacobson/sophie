@@ -7,16 +7,10 @@
 
 // Keep absolutely still.  Her vision is based on movement.
 
-// ONGOING:
-// monitor for leaks
-
 // TODO:
 // [h264 @ 0x7f865502da00] mmco: unref short failure
 // [h264_videotoolbox @ 0x7f8e6d992c00] Color range not set for yuv420p. Using MPEG range.
 // figure out what to do with H.264 decoder workaround
-
-// KNOWN LEAKS:
-// (macOS only) of a single CVPixelBuffer every time an output file is created, fixed here: <https://github.com/FFmpeg/FFmpeg/commit/8a969e1280aa7aef31de6bd3db5ce46dc123fde0>
 
 #if defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__)
 #import <CoreGraphics/CoreGraphics.h>
@@ -386,6 +380,7 @@ int main(int argc, const char *argv[]) {
                         output = input.create_output(temp_filename);
 
                         // Output our buffered frames first.
+                        // TODO: when frame_buffer is large, this loop can take quite a while (many seconds on the machine I'm using) and can cause the outer loop to miss frames.
                         bool encoded_video = false;
                         for (AVFrame *const frame : frame_buffer) {
                             const bool is_audio = frame_is_audio(frame);
