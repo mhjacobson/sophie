@@ -48,7 +48,7 @@ Output::Output(const std::string filename, const AVCodecParameters *const video_
     //     <https://lists.libav.org/pipermail/libav-commits/2016-February/018031.html>
     //     <https://github.com/FFmpeg/FFmpeg/commit/9200514ad8717c63f82101dc394f4378854325bf>
     _video_codec_ctx = avcodec_alloc_context3(video_codec);
-    _video_codec_ctx->time_base = video_time_base; // decoder and encoder codec_ctx must match in timebase
+    _video_codec_ctx->time_base = video_time_base; // encoder codec_ctx timebase matches incoming frames
     avcodec_parameters_to_context(_video_codec_ctx, _video_stream->codecpar);
 
     if (_output_ctx->oformat->flags & AVFMT_GLOBALHEADER) {
@@ -58,7 +58,7 @@ Output::Output(const std::string filename, const AVCodecParameters *const video_
     AVDictionary *codec_options = NULL;
     av_dict_set(&codec_options, "preset", "superfast", 0);
 
-    if (avcodec_open2(_video_codec_ctx, video_codec, &codec_options) < 0) {
+    if (avcodec_open2(_video_codec_ctx, NULL, &codec_options) < 0) {
         abort();
     }
 
@@ -70,14 +70,14 @@ Output::Output(const std::string filename, const AVCodecParameters *const video_
     // ---
 
     _audio_codec_ctx = avcodec_alloc_context3(audio_codec);
-    _audio_codec_ctx->time_base = audio_time_base; // decoder and encoder codec_ctx must match in timebase
+    _audio_codec_ctx->time_base = audio_time_base; // encoder codec_ctx timebase matches incoming frames
     avcodec_parameters_to_context(_audio_codec_ctx, _audio_stream->codecpar);
 
     if (_output_ctx->oformat->flags & AVFMT_GLOBALHEADER) {
         _audio_codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
-    if (avcodec_open2(_audio_codec_ctx, audio_codec, NULL) < 0) {
+    if (avcodec_open2(_audio_codec_ctx, NULL, NULL) < 0) {
         abort();
     }
 
@@ -94,6 +94,8 @@ Output::Output(const std::string filename, const AVCodecParameters *const video_
     }
 
     av_dump_format(_output_ctx, 0, filename.c_str(), 1);
+    fprintf(stderr, "output video timebases: stream = %s, codec = %s\n", timebase_str(_video_stream->time_base).c_str(), timebase_str(_video_codec_ctx->time_base).c_str());
+    fprintf(stderr, "output audio timebases: stream = %s, codec = %s\n", timebase_str(_audio_stream->time_base).c_str(), timebase_str(_audio_codec_ctx->time_base).c_str());
 }
 
 void Output::encode_frame(AVFrame *const frame, const bool is_audio) {
@@ -146,7 +148,11 @@ void Output::flush(const bool is_audio) {
             abort();
         }
 
+        // NOTE: at this point, the packet's timestamps are in codec_ctx->time_base.
+        // They must now be rescaled into stream->time_base.
+        // This isn't necessary on decode, where the two timebases always match (and where FFmpeg no longer even sets codec_ctx->time_base reliably -- see commit 5f9e848e68).
         av_packet_rescale_ts(packet, codec_ctx->time_base, stream->time_base);
+
 #if VERBOSE
         fprintf(stderr, "> write %s: dts %" PRId64 "\n", is_audio ? "audio" : "video", packet->dts);
 #endif /* VERBOSE */

@@ -5,6 +5,10 @@
 //  Created by Matt Jacobson on 5/26/22.
 //
 
+extern "C" {
+#include <libavutil/rational.h>
+}
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -175,6 +179,10 @@ private:
         output.flush();
         remove(source.c_str());
     }
+}
+
+static std::string timebase_str(const AVRational timebase) {
+    return "{" + std::to_string(timebase.num) + " / " + std::to_string(timebase.den) + "}";
 }
 
 #endif /* UTIL_H */

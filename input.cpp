@@ -66,6 +66,8 @@ Input::Input(const std::string filename) {
     avformat_seek_file(_input_ctx, _video_stream_index, 0, 0, 0, AVSEEK_FLAG_FRAME);
 
     av_dump_format(_input_ctx, 0, filename.c_str(), 0);
+    fprintf(stderr, "input video timebases: stream = %s, codec = %s\n", timebase_str(video_stream->time_base).c_str(), timebase_str(_video_codec_ctx->time_base).c_str());
+    fprintf(stderr, "input audio timebases: stream = %s, codec = %s\n", timebase_str(audio_stream->time_base).c_str(), timebase_str(_audio_codec_ctx->time_base).c_str());
 }
 
 // Caller must free returned frame.
@@ -96,8 +98,6 @@ AVFrame *Input::get_next_frame(bool *const is_audio_out) {
 
             AVStream *const stream = _input_ctx->streams[packet->stream_index];
             AVCodecContext *const codec_ctx = is_audio ? _audio_codec_ctx : _video_codec_ctx;
-
-            av_packet_rescale_ts(packet, stream->time_base, codec_ctx->time_base);
 
             if (avcodec_send_packet(codec_ctx, packet) < 0) {
                 abort();
@@ -133,12 +133,12 @@ AVFrame *Input::get_next_frame(bool *const is_audio_out) {
     return frame;
 }
 
-AVRational Input::video_codec_time_base() {
-    return _video_codec_ctx->time_base;
+AVRational Input::video_frame_time_base() {
+    return _input_ctx->streams[_video_stream_index]->time_base;
 }
 
 Output *Input::create_output(const std::string filename) {
-    return new Output(filename, _video_codecpar, _audio_codecpar, _video_codec_ctx->time_base, _audio_codec_ctx->time_base);
+    return new Output(filename, _video_codecpar, _audio_codecpar, _input_ctx->streams[_video_stream_index]->time_base, _input_ctx->streams[_audio_stream_index]->time_base);
 }
 
 Input::~Input() {

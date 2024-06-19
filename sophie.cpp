@@ -398,7 +398,7 @@ int main(int argc, const char *argv[]) {
 
                     manual_trigger = false;
                     last_motion_timestamp = frame->pts;
-                } else if (output != NULL && frame->pts >= last_motion_timestamp + div_i64_rat(AFTER_MOTION_RECORD_SECONDS, input.video_codec_time_base())) {
+                } else if (output != NULL && frame->pts >= last_motion_timestamp + div_i64_rat(AFTER_MOTION_RECORD_SECONDS, input.video_frame_time_base())) {
                     fprintf(stderr, "%d: ending recording; moving to %s\n", video_frame_total_index, destination_filename.c_str());
                     output->finish();
 
