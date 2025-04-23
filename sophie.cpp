@@ -13,7 +13,8 @@
 // figure out what to do with H.264 decoder workaround
 
 #if defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__)
-#import <CoreGraphics/CoreGraphics.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <CoreGraphics/CoreGraphics.h>
 extern "C" void CGImageWriteToFile(CGImageRef, const char *);
 #else /* __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ */
 #include <png.h>
@@ -32,11 +33,15 @@ extern "C" {
 #include <limits.h>
 #include <signal.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <unistd.h>
+#include <sys/signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>

@@ -8,11 +8,13 @@
 extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
+#include <libavutil/avutil.h>
 }
 
 #include "input.h"
 #include "output.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 Input::Input(const std::string filename) {
